@@ -1,0 +1,57 @@
+clear; 
+
+%%
+[y, Fs] = audioread('Floyd.m4a');
+trgnr = length(y)/Fs; % record time in seconds
+% plot((1:length(y))/Fs,y);
+% xlabel('Time [sec]'); ylabel('Amplitude');
+% title('Comfortable Numb');
+%p8 = audioplayer(y(1:length(y)/5),Fs); playblocking(p8);
+
+%%
+
+rect = @(x, a) ones(1, numel(x)).*(abs(x)<a/2);
+vec = y.';
+
+L= trgnr;
+n=length(y); 
+t2=linspace(0,L,n+1); 
+t=t2(1:n); 
+
+k=(1/L)*[0:n/2 -n/2:-1];ks=fftshift(k);
+
+filterBelow = rect(ks, 400);
+
+vec_ft = fft(vec);
+vec_filter = vec_ft.*fftshift(filterBelow);
+y = ifft(vec_filter);
+
+%%
+a = 200;
+tau = 0:.05:L/10;
+notes = zeros(1, length(tau));
+for j = 1:length(tau)
+    g = exp(-a*(t-tau(j)).^2);
+    Sg = g.*y;
+    Sgt = fft(Sg);
+    [M, I] = max(Sgt);
+    notes(1,j) = abs(k(I));
+    Sgt_spec(:,j) = fftshift(abs(Sgt));
+    
+end 
+
+%%
+
+figure(2)
+pcolor(tau, ks, Sgt_spec);
+shading interp
+colormap(hot)
+colorbar
+xlabel('time (t)'), ylabel('frequency (HZ)')
+ylim([0,200])
+
+%%
+figure(3)
+plot(tau, notes,'o','MarkerFaceColor', 'b');
+title("Score for Music");
+xlabel("Time (s)"); ylabel("Notes corresponding to frequency (Hz)");
